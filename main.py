@@ -6,9 +6,7 @@ from panoptic.core.plugin.plugin_project_interface import PluginProjectInterface
 
 import numpy as np
 import multiprocessing
-
-if multiprocessing.get_start_method(allow_none=True) != "spawn":
-    multiprocessing.set_start_method("spawn", force=True)
+multiprocessing.set_start_method("spawn", force=True)
 import pimmi
 
 class PimmiParams(BaseModel):
