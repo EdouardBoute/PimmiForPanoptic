@@ -1,39 +1,49 @@
 from pydantic import BaseModel
-
 from panoptic.core.plugin.plugin import APlugin
 from panoptic.models import Instance, ActionContext
 from panoptic.core.plugin.plugin_project_interface import PluginProjectInterface
 
+from panoptic.core.interfaces import PluginProjectInterface
+from panoptic.core.action import ActionContext, ActionResult
+import pimmi
+import numpy as np
 
-class PluginParams(BaseModel):
-    """
-    @default_text_prop: the default text prop that will be used for text+image similarity
-    @ocr_prop_name: the name of the prop that will be created after an ocr
-    """
-    default_text_prop: str = "tweet_text"
-
-    ocr_prop_name: str = "ocr"
+class PimmiParams(BaseModel):
+    threshold: float = 0.5
   
-  
-class PluginExample(APlugin):  
+class PimmiClusterPlugin(APlugin):  
     def __init__(self, project: PluginProjectInterface, plugin_path: str, name: str):  
-        super().__init__(name=name,project=project, plugin_path=plugin_path)  
-        self.params = PluginParams()  
+        super().__init__(name=PimmiCluster,project=project, plugin_path=plugin_path)  
+        self.params = PimmiParams()
 
-        self.project.on_instance_import(self.compute_image_vector)
-        self.add_action_easy(self.create_clusters, ['group'])
-        self.add_action_easy(self.find_images, ['similar'])
-        self.add_action_easy(self.ocr, ['execute'])
+        self.add_action_easy(self.cluster_images, ["group"])
   
-    async def compute_image_vector(self, instance: Instance):  
-        pass
+    async def cluster_images(self, context: ActionContext, threshold: float = 0.5):
+        """
+        Fonction de clustering basée sur PIMMI.
+        :param context: Contexte d'exécution de Panoptic.
+        :param threshold: Seuil de similarité pour regrouper les images.
+        :return: ActionResult avec les groupes d'images.
+        """
+        try:
+            instance_ids = context.instance_ids  # Liste des ID des images sélectionnées
+            images = self.project.get_instances(ids=instance_ids)
 
-    async def find_images(self, context: ActionContext):
-        pass
+            if not images:
+                return ActionResult(errors=[{"name": "No images", "message": "Aucune image sélectionnée"}])
 
-    async def create_clusters(self, context: ActionContext):
-        pass
+            # Extraire les embeddings avec PIMMI
+            embeddings = [pimmi.compute_embedding(img.file_path) for img in images]
+            clusters = pimmi.cluster_embeddings(np.array(embeddings), threshold=threshold)
 
-    async def make_ocr(self, context: ActionContext):
-        pass
+            # Créer les groupes pour Panoptic
+            grouped_instances = {}
+            for img, cluster_id in zip(images, clusters):
+                grouped_instances.setdefault(cluster_id, []).append(img.id)
 
+            result_groups = [{"ids": ids, "name": f"Cluster {cluster}"} for cluster, ids in grouped_instances.items()]
+            
+            return ActionResult(groups=result_groups)
+
+        except Exception as e:
+            return ActionResult(errors=[{"name": "Processing Error", "message": str(e)}])
