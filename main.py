@@ -12,10 +12,10 @@ if __name__ == "__main__":
     import pimmi
     import numpy as np
 
-    class PimmiParams(BaseModel):
-        threshold: float = 0.5
+    #class PimmiParams(BaseModel):
+    #    threshold: float = 0.5
     
-    class PimmiClusterPlugin(APlugin):  
+    class PluginExample(APlugin):  
         def __init__(self, project: PluginProjectInterface, plugin_path: str, name: str):  
             super().__init__(name=PimmiCluster,project=project, plugin_path=plugin_path)  
             self.params = PimmiParams()
