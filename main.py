@@ -1,13 +1,14 @@
-from pydantic import BaseModel
+import multiprocessing
 
+multiprocessing.set_start_method("spawn", force=True)
+
+from pydantic import BaseModel
 from panoptic.core.plugin.plugin import APlugin
 from panoptic.models import Instance, ActionContext
 from panoptic.core.plugin.plugin_project_interface import PluginProjectInterface
 
-import numpy as np
-import multiprocessing
-multiprocessing.set_start_method("spawn", force=True)
 import pimmi
+import numpy as np
 
 class PimmiParams(BaseModel):
     threshold: float = 0.5
