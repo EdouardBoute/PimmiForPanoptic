@@ -1,8 +1,9 @@
 from pydantic import BaseModel
+
 from panoptic.core.plugin.plugin import APlugin
 from panoptic.models import Instance, ActionContext
 from panoptic.core.plugin.plugin_project_interface import PluginProjectInterface
-from panoptic.core.action import ActionContext, ActionResult
+
 import pimmi
 import numpy as np
 
